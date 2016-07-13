@@ -1,23 +1,49 @@
-// es6 import style
 import $ from 'jquery';
-
 import './style.scss';
+import youtubeSearch from './youtube-api';
+import React,{Component} from 'react';
+import ReactDOM from 'react-dom';
+import SearchBar from './components/search_bar';
+import VideoList from './components/video_list';
+import VideoDetail from './components/video_detail';
+import debounce from 'lodash.debounce';
 
+//all imports go at the top
 
-// this is a generator function.
-// note the *
-function *simpleCounter() {
-  let count = 0;
-  while (true) {
-    yield count++;
-  }
+class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+       videos: [],
+       selectedVideo: null,
+    };
+    this.search('pixar');
+    this.search = debounce(this.search, 300);
+
+}
+search(text){
+ youtubeSearch(text).then(videos => {
+   this.setState({
+      videos,
+      selectedVideo: videos[0],
+    });
+});
 }
 
-// instantiate generator
-const counter = simpleCounter();
+  render(){
+    if(!this.state.selectedVideo)
+    {
+     return <div>Loading...</div>;
+    }
 
-setInterval(
-  // arrow notation for anonymous function
-  () => { $('#main').html(`You've been on this page for ${counter.next().value} seconds.`); }
-  , 1000
-);
+    return (
+    <div id="video-section">
+       <SearchBar id="searchbar" onSearchChange={text => this.search(text)}/>
+       <VideoDetail video={this.state.selectedVideo} />
+       <VideoList onVideoSelect={selectedVideo => this.setState({selectedVideo})} videos={this.state.videos} />
+    </div>
+    );
+ }
+}
+
+ReactDOM.render(<App />, document.getElementById('main'));
